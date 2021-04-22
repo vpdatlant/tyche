@@ -120,4 +120,67 @@
         }
 
     }
+    
+    function exportXML(&$db)
+    {
+        $xml = new domDocument("1.0", "windows-1251");
+        $xml->formatOutput=true;
+        $root = $xml->createElement("Товары");
+        $xml->appendChild($root);
+        $qa_product = mysqli_query($db,'SELECT code,name FROM a_product;')
+            or die("Ошибка ".mysqli_error($db));
+
+        for ($i = 0; $i < $qa_product->num_rows; $i++)
+        {
+            $qa_product_row = $qa_product->fetch_row();
+            $product = $xml->createElement("Товар");
+            $product->setAttribute("Код", $qa_product_row[0]);
+            $product->setAttribute("Название", $qa_product_row[1]);
+            $qa_price = mysqli_query($db, 'SELECT price,tprice 
+                                                 FROM a_price
+                                                 WHERE name=\''.$qa_product_row[1].
+                                               '\' ORDER BY id;')
+                or die("Ошибка ".mysqli_error($db));
+            for ($j = 0; $j < 2; $j++)
+            {
+            $qa_price_row = $qa_price->fetch_row();
+            $price = $xml->createElement("Цена", $qa_price_row[0]);
+            $price->setAttribute("Тип", $qa_price_row[1]);
+            $product->appendChild($price);
+            }
+
+            $qa_property = mysqli_query($db, 'SELECT type,property 
+                                                    FROM a_property
+                                                    WHERE name=\''.$qa_product_row[1].
+                                                    '\' ORDER BY id;')
+                or die("Ошибка ".mysqli_error($db));
+            $propertys = $xml->createElement('Свойства');
+            for ($j = 0; $j < $qa_property->num_rows; $j++)
+            {
+                $qa_property_row = $qa_property->fetch_row();
+                $property = $xml->createElement($qa_property_row[0], $qa_property_row[1]);
+                if ($qa_property_row[0] == 'Белизна')
+                    $property->setAttribute('ЕдИзм','%');
+                $propertys->appendChild($property);
+            }
+
+            $qa_category = mysqli_query($db, 'SELECT code, category 
+                                                    FROM a_category
+                                                    WHERE code='.$qa_product_row[0].
+                                                  ' ORDER BY id;')
+                or die("Ошибка ".mysqli_error($db));
+            $categorys = $xml->createElement('Разделы');
+            for ($j = 0; $j < $qa_category->num_rows; $j++)
+            {
+                $qa_category_row = $qa_category->fetch_row();
+                $category = $xml->createElement('Раздел',$qa_category_row[1]);
+                $categorys->appendChild($category);
+            }
+
+            $product->appendChild($propertys);
+            $product->appendChild($categorys);
+            $root->appendChild($product);
+        }
+        $xml->save("22.xml");
+    }
 ?>
