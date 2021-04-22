@@ -15,4 +15,18 @@
             $a = substr_replace($a, strrev($b),$positionArray[1],$lenght);
         }
     }
+
+    $skey = ''; //Глобальная переменная только для функции mySortForKey
+    function mySortForKey(&$a, $b)
+    {
+        function cmp_function($a, $b){
+            return ($a[$GLOBALS['skey']] > $b[$GLOBALS['skey']]);
+        }
+        $GLOBALS['skey'] = $b;
+        foreach ($a as $key => $value)
+        {
+            if (!key_exists($b,$value)) throw new Exception($key);
+        }
+        uasort($a, 'cmp_function');
+    }
 ?>
