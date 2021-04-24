@@ -30,7 +30,7 @@ CREATE TABLE `a_category` (
   UNIQUE KEY `id_UNIQUE` (`id`),
   KEY `a_category_code_index` (`code`),
   CONSTRAINT `a_category_a_product_code_fk` FOREIGN KEY (`code`) REFERENCES `a_product` (`code`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=155 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=170 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -49,7 +49,7 @@ CREATE TABLE `a_price` (
   UNIQUE KEY `id_UNIQUE` (`id`),
   KEY `fk_a_price_1_idx` (`name`),
   CONSTRAINT `a_price_a_product_name_fk` FOREIGN KEY (`name`) REFERENCES `a_product` (`name`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=143 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=159 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -67,7 +67,7 @@ CREATE TABLE `a_product` (
   UNIQUE KEY `id_UNIQUE` (`id`),
   KEY `a_product_code_index` (`code`),
   KEY `a_product_name_index` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -84,7 +84,7 @@ CREATE TABLE `a_property` (
   `property` varchar(128) CHARACTER SET utf8 DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=180 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=198 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -96,11 +96,12 @@ DROP TABLE IF EXISTS `sp_rubricator`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sp_rubricator` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `code` int(11) DEFAULT NULL,
   `parent_id` int(11) DEFAULT NULL,
   `child_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `sp_rubricator_id_uindex` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -132,8 +133,8 @@ BEGIN
                     WHERE code=prod_code 
                     LIMIT increment,1);
 		if increment > 0 THEN
-			insert into sp_rubricator(parent_id,child_id)
-			values (pid, cid);
+			insert into sp_rubricator(code,parent_id,child_id)
+			values (prod_code,pid, cid);
         END IF;
         set pid = cid;
 	    set increment = increment + 1;
@@ -154,4 +155,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-04-22 22:18:58
+-- Dump completed on 2021-04-24 15:43:50
