@@ -42,7 +42,7 @@
         $qRubricator = $db->prepare("call sel_sp_rubricator(:pcode);");
 
         $xml = new domDocument('1.0','windows-1251');
-        $xml->load('2.xml');
+        $xml->load($doc);
         $root = $xml->documentElement;
         $products = $root->childNodes;
         for ($i=1; $i < $products->length; $i+=2)
