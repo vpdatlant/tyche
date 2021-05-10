@@ -16,22 +16,31 @@
         }
     }
 
-    $skey = ''; //Глобальная переменная только для функции mySortForKey
     function mySortForKey(&$a, $b)
     {
-        function cmp_function($a, $b){
-            return ($a[$GLOBALS['skey']] > $b[$GLOBALS['skey']]);
-        }
-        $GLOBALS['skey'] = $b;
         foreach ($a as $key => $value)
         {
             if (!key_exists($b,$value)) throw new Exception($key);
         }
-        uasort($a, 'cmp_function');
+        function cmp($key)
+        {
+            return function ($a, $b) use ($key)
+            {
+                return ($a[$key] > $b[$key]);
+            };
+        }
+        uasort($a, cmp($b));
     }
 
+    //PDO. Подготовленные запросы, есть входные параметры в скрипт через xml документ
     function importXml($doc, &$db)
     {
+        $qProduct = $db->prepare("insert into a_product (code,name) values (:pcode,:pname)");
+        $qPrice = $db->prepare("insert into a_price (name, tprice, price) values (:pname,:pricet,:price)");
+        $qProperty = $db->prepare("insert into a_property (name, type, property) values (:pname,:type,:property)");
+        $qCategory = $db->prepare("insert into a_category (code, category) values (:code,:category)");
+        $qRubricator = $db->prepare("call sel_sp_rubricator(:pcode);");
+
         $xml = new domDocument('1.0','windows-1251');
         $xml->load('2.xml');
         $root = $xml->documentElement;
@@ -62,7 +71,6 @@
                 $property = $properties->item($ii);
                 $arrPropertiesTag[] = $property->tagName;
                 $arrProperties[] = $property->nodeValue; //for base
-                //$arrProperties[] = [$property->attributes->item(0)->name => $property->attributes->item(0)->value];
             }
             if ($params->item(7)->tagName == 'Разделы')
                 $categories = $params->item(7)->childNodes;
@@ -75,58 +83,59 @@
                 $arrCategories[] = $category->nodeValue; //for base
             }
 
-            $qProduct = 'insert into a_product (code,name) '.
-                         'values ('.$pcode.', \''.$pname.'\');';
-            //запрос в базу
-            $result = mysqli_query($db,$qProduct) or die ('Ошибка '. mysqli_error($db));
-            if ($result) printf('Добавление в a_product успешно');
+            $qProduct->bindParam(':pcode', $pcode);
+            $qProduct->bindParam(':pname', $pname);
+            if ($qProduct->execute()) printf('Добавление в a_product успешно');
+            else throw new Exception('Ошибка вставки в базу a_product');
 
             $arrPricet = ['Базовая', 'Москва'];
             $arrPrice = [$basePrice, $mosPrice];
             $jj = 0;
             foreach ($arrPrice as $value)
             {
-                $qPrice = 'insert into a_price (name, tprice, price) '.
-                            'values (\''.$pname.'\', \''.$arrPricet[$jj].'\', '.$value.');';
-                //запрос в базу
-                $result = mysqli_query($db,$qPrice) or die ('Ошибка '. mysqli_error($db));
-                if ($result) printf('Добавление в a_price успешно');
+                $qPrice->bindParam(':pname', $pname);
+                $qPrice->bindParam(':pricet', $arrPricet[$jj]);
+                $qPrice->bindParam(':price', $value);
+                if ($qPrice->execute()) printf('Добавление в a_price успешно');
+                else throw new Exception('Ошибка вставки в базу a_price');
                 $jj++;
             }
 
             $nn = 0;
             foreach ($arrProperties as $value)
             {
-                $qProperty = 'insert into a_property (name, type, property) '.
-                                'values (\''.$pname.'\', \''.$arrPropertiesTag[$nn].'\', \''.$value.'\');';
-                //запрос в базу
-                $result = mysqli_query($db,$qProperty) or die ('Ошибка '. mysqli_error($db));
-                if ($result) printf('Добавление в a_property успешно');
+                $qProperty->bindParam(':pname',$pname);
+                $qProperty->bindParam(':type',$arrPropertiesTag[$nn]);
+                $qProperty->bindParam(':property', $value);
+                if ($qProperty->execute()) printf('Добавление в a_property успешно');
+                else throw new Exception('Ошибка вставки в базу a_property');
                 $nn++;
             }
 
             foreach ($arrCategories as $value)
             {
-                $qCategory = 'insert into a_category (code, category) '.
-                                'values ('.$pcode.', \''.$value.'\');';
-                //запрос в базу
-                $result = mysqli_query($db,$qCategory) or die ('Ошибка '. mysqli_error($db));
-                if ($result) printf('Добавление в a_category успешно');
-            }
-            $qRubricator = 'call sel_sp_rubricator('.$pcode.');';
-            $result = mysqli_query($db,$qRubricator) or die ('Ошибка '. mysqli_error($db));
-            if ($result) printf('Работа рубрикатора успешна.');
+                $qCategory->bindParam(':code',$pcode);
+                $qCategory->bindParam(':category',$value);
+                if ($qCategory->execute()) printf('Добавление в a_category успешно');
+                else throw new Exception('Ошибка вставки в базу a_category');
 
+            }
+
+            $qRubricator->bindParam(':pcode',$pcode);
+            if ($qRubricator->execute()) printf('Выполнение рубрикатора успешно');
+            else throw new Exception('Ошибка выполнения рубрикатора');
         }
 
     }
-    
+
+    //Без подготовленных запросов, нет входных параметров в скрипт
     function exportXML(&$db)
     {
         $xml = new domDocument("1.0", "windows-1251");
         $xml->formatOutput=true;
         $root = $xml->createElement("Товары");
         $xml->appendChild($root);
+
         $qa_product = mysqli_query($db,'SELECT code,name FROM a_product;')
             or die("Ошибка ".mysqli_error($db));
 
