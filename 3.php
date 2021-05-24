@@ -1,12 +1,17 @@
 <?php
 namespace Test3;
 
+use Exception;
+
 class newBase
 {
     static private $count = 0;
     static private $arSetName = [];
+//    /**
+//     * @param string $name
+//     */
     /**
-     * @param string $name
+     * @param int $name
      */
     function __construct(int $name = 0)
     {
@@ -19,7 +24,8 @@ class newBase
         $this->name = $name;
         self::$arSetName[] = $this->name;
     }
-    private $name;
+//    private $name;
+    protected $name;
     /**
      * @return string
      */
@@ -30,18 +36,22 @@ class newBase
     protected $value;
     /**
      * @param mixed $value
+     * @returne NewBase
      */
-    public function setValue($value)
+    public function setValue($value): newBase
     {
         $this->value = $value;
+        return $this;
     }
     /**
      * @return string
+//     * @return int
      */
-    public function getSize()
+    public function getSize() : string
     {
-        $size = strlen(serialize($this->value));
-        return strlen($size) + $size;
+//        $size = strlen(serialize($this->value));
+//        return strlen($size) + $size;
+        return strlen(serialize($this->value));
     }
     public function __sleep()
     {
@@ -52,18 +62,21 @@ class newBase
      */
     public function getSave(): string
     {
-        $value = serialize($value);
-        return $this->name . ':' . sizeof($value) . ':' . $value;
+//        $value = serialize($value);
+//        return $this->name . ':' . sizeof($value) . ':' . $value;
+        $value = serialize($this->value);
+        return $this->name . ':' . strlen($value) . ':' . $value;
     }
+
     /**
+     * @param string $value
      * @return newBase
      */
     static public function load(string $value): newBase
     {
         $arValue = explode(':', $value);
-        return (new newBase($arValue[0]))
-            ->setValue(unserialize(substr($value, strlen($arValue[0]) + 1
-                + strlen($arValue[1]) + 1), $arValue[1]));
+        return (new newBase($arValue[0]))->setValue(unserialize(substr($value, strlen($arValue[0]) + 1
+            + strlen($arValue[1]) + 1, $arValue[1])));
     }
 }
 class newView extends newBase
@@ -73,14 +86,16 @@ class newView extends newBase
     private $property = null;
     /**
      * @param mixed $value
+     * @return newBase
      */
-    public function setValue($value)
+    public function setValue($value) : newBase
     {
         parent::setValue($value);
         $this->setType();
         $this->setSize();
+        return $this;
     }
-    public function setProperty($value)
+    public function setProperty($value): newView
     {
         $this->property = $value;
         return $this;
@@ -91,8 +106,8 @@ class newView extends newBase
     }
     private function setSize()
     {
-        if (is_subclass_of($this->value, "Test3\newView")) {
-            $this->size = parent::getSize() + 1 + strlen($this->property);
+        if (is_subclass_of($this->value, "Test3\\newView")) {
+            $this->size = (int)parent::getSize() + 1 + strlen($this->property);
         } elseif ($this->type == 'test') {
             $this->size = parent::getSize();
         } else {
@@ -100,14 +115,16 @@ class newView extends newBase
         }
     }
     /**
-     * @return string
+     * @return string[]
      */
     public function __sleep()
     {
         return ['property'];
     }
+
     /**
      * @return string
+     * @throws Exception
      */
     public function getName(): string
     {
@@ -146,7 +163,10 @@ class newView extends newBase
      */
     public function getSave(): string
     {
-        if ($this->type == 'test') {
+//        if ($this->type == 'test') {
+//            $this->value = $this->value->getSave();
+//        }
+        if ($this->type == 'test' and is_object($this->value)) {
             $this->value = $this->value->getSave();
         }
         return parent::getSave() . serialize($this->property);
@@ -157,12 +177,10 @@ class newView extends newBase
     static public function load(string $value): newBase
     {
         $arValue = explode(':', $value);
-        return (new newBase($arValue[0]))
-            ->setValue(unserialize(substr($value, strlen($arValue[0]) + 1
-                + strlen($arValue[1]) + 1), $arValue[1]))
+        return (new newView($arValue[0]))
+            ->setValue(unserialize(substr($value, strlen($arValue[0]) + 1 + strlen($arValue[1]) + 1, $arValue[1])))
             ->setProperty(unserialize(substr($value, strlen($arValue[0]) + 1
-                + strlen($arValue[1]) + 1 + $arValue[1])))
-            ;
+                + strlen($arValue[1]) + 1 + $arValue[1])));
     }
 }
 function gettype($value): string
@@ -170,19 +188,19 @@ function gettype($value): string
     if (is_object($value)) {
         $type = get_class($value);
         do {
-            if (strpos($type, "Test3\newBase") !== false) {
+            if (strpos($type, "Test3\\newBase") !== false) {
                 return 'test';
             }
         } while ($type = get_parent_class($type));
     }
-    return gettype($value);
+    return \gettype($value);
 }
 
 
 $obj = new newBase('12345');
 $obj->setValue('text');
 
-$obj2 = new \Test3\newView('O9876');
+$obj2 = new newView('09876');
 $obj2->setValue($obj);
 $obj2->setProperty('field');
 $obj2->getInfo();
@@ -190,6 +208,14 @@ $obj2->getInfo();
 $save = $obj2->getSave();
 
 $obj3 = newView::load($save);
+
+$obj4 = newBase::load($obj->getSave());
+
+echo $obj->getSave().PHP_EOL;
+echo $obj4->getSave().PHP_EOL;
+
+echo $obj2->getSave().PHP_EOL;
+echo $obj3->getSave().PHP_EOL;
 
 var_dump($obj2->getSave() == $obj3->getSave());
 
