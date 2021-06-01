@@ -7,16 +7,15 @@ class newBase
 {
     static private $count = 0;
     static private $arSetName = [];
-//    /**
-//     * @param string $name
-//     */
+
     /**
+//     * @param string $name
      * @param int $name
      */
-    function __construct(int $name = 0)
+    public function __construct(int $name = 0)
     {
         if (empty($name)) {
-            while (array_search(self::$count, self::$arSetName) != false) {
+            while (in_array(self::$count, self::$arSetName, true)) {
                 ++self::$count;
             }
             $name = self::$count;
@@ -72,18 +71,18 @@ class newBase
      * @param string $value
      * @return newBase
      */
-    static public function load(string $value): newBase
+    public static function load(string $value): newBase
     {
         $arValue = explode(':', $value);
         return (new newBase($arValue[0]))->setValue(unserialize(substr($value, strlen($arValue[0]) + 1
-            + strlen($arValue[1]) + 1, $arValue[1])));
+            + strlen($arValue[1]) + 1, $arValue[1]),[__CLASS__]));
     }
 }
 class newView extends newBase
 {
-    private $type = null;
+    private $type;
     private $size = 0;
-    private $property = null;
+    private $property;
     /**
      * @param mixed $value
      * @return newBase
@@ -100,15 +99,15 @@ class newView extends newBase
         $this->property = $value;
         return $this;
     }
-    private function setType()
+    private function setType(): void
     {
         $this->type = gettype($this->value);
     }
-    private function setSize()
+    private function setSize(): void
     {
-        if (is_subclass_of($this->value, "Test3\\newView")) {
+        if ($this->value instanceof self) {
             $this->size = (int)parent::getSize() + 1 + strlen($this->property);
-        } elseif ($this->type == 'test') {
+        } elseif ($this->type === 'test') {
             $this->size = parent::getSize();
         } else {
             $this->size = strlen($this->value);
@@ -147,7 +146,7 @@ class newView extends newBase
     {
         return ' size ' . $this->size . ';';
     }
-    public function getInfo()
+    public function getInfo(): void
     {
         try {
             echo $this->getName()
@@ -166,7 +165,7 @@ class newView extends newBase
 //        if ($this->type == 'test') {
 //            $this->value = $this->value->getSave();
 //        }
-        if ($this->type == 'test' and is_object($this->value)) {
+        if ($this->type === 'test' && is_object($this->value)) {
             $this->value = $this->value->getSave();
         }
         return parent::getSave() . serialize($this->property);
@@ -174,13 +173,13 @@ class newView extends newBase
     /**
      * @return newView
      */
-    static public function load(string $value): newBase
+    public static function load(string $value): newBase
     {
         $arValue = explode(':', $value);
         return (new newView($arValue[0]))
-            ->setValue(unserialize(substr($value, strlen($arValue[0]) + 1 + strlen($arValue[1]) + 1, $arValue[1])))
+            ->setValue(unserialize(substr($value, strlen($arValue[0]) + 1 + strlen($arValue[1]) + 1, $arValue[1]),[__CLASS__]))
             ->setProperty(unserialize(substr($value, strlen($arValue[0]) + 1
-                + strlen($arValue[1]) + 1 + $arValue[1])));
+                + strlen($arValue[1]) + 1 + $arValue[1]),[__CLASS__]));
     }
 }
 function gettype($value): string
@@ -188,7 +187,7 @@ function gettype($value): string
     if (is_object($value)) {
         $type = get_class($value);
         do {
-            if (strpos($type, "Test3\\newBase") !== false) {
+            if (strpos($type, newBase::class) !== false) {
                 return 'test';
             }
         } while ($type = get_parent_class($type));
@@ -217,5 +216,5 @@ echo $obj4->getSave().PHP_EOL;
 echo $obj2->getSave().PHP_EOL;
 echo $obj3->getSave().PHP_EOL;
 
-var_dump($obj2->getSave() == $obj3->getSave());
+var_dump($obj2->getSave() === $obj3->getSave());
 
