@@ -1,0 +1,10 @@
+.text-backlight{
+	background: none repeat scroll 0 0 #EBF4F9;
+	border: 1px solid #E3EEEF;
+	border-radius: 5px 5px 5px 5px;
+	box-shadow: 0 0 5px 0 rgba(228, 228, 228, 0.3);
+	display: block;
+	margin: 3px;
+	padding: 10px;
+	font-style: italic;
+}
