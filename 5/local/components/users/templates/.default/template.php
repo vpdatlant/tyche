@@ -7,18 +7,19 @@
 		<input type="submit" value=""/>
 	</div>
 </form>
-<div style="clear: both;"></div>
-<?
-	if (isset($_POST["search"])) {
-		$filter = Array("EMAIL" => $_POST["search"]);
-	}else{
-		$filter =  Array("EMAIL" => "");
-	}
 
-	$rsUsers = CUser::GetList(($by = "DATE_REGISTER"), ($order = "asc"), $filter);
-	while($arItem= $rsUsers->GetNext())	
-	{
-		echo "<a href = 'detail.php?login=".$arItem['LOGIN']."'>[". $arItem['ID']."] (".$arItem['LOGIN'].") ".$arItem['EMAIL']." ".$arItem['LAST_NAME']."<a><br>";	
-	}
+<div style="clear: both;"></div>
+<br>
+<?
+	//var_dump($arResult['rsUsers']);
+	while($arItem= $arResult['rsUsers']->GetNext())	
+	{ ?>
+		<form action='<?=$arItem['LOGIN']?>' method='post'>
+			<input type='hidden' name='email' value='<?=$arItem['EMAIL']?>'>
+			<input type='hidden' name='date_register' value='<?=$arItem['DATE_REGISTER']?>'>
+			<input type='hidden' name='last_login' value='<?=$arItem['LAST_LOGIN']?>'>
+		<a href = '' onClick='this.parentNode.submit(); return false;'>[<?=$arItem['ID']?>] (<?=$arItem['LOGIN']?>) <?=$arItem['EMAIL']?> <?=$arItem['LAST_NAME']?><a><br>
+		</form>
+	<?}
 ?>
 
