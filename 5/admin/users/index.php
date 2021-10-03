@@ -2,7 +2,7 @@
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
 $APPLICATION->SetTitle("");?><?
 $APPLICATION->IncludeComponent(
-	"users", 
+	"bitrix:users.list", 
 	".default", 
 	array(
 		"ACTIVE_DATE_FORMAT" => "d.m.Y",
